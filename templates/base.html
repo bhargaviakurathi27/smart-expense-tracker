@@ -23,6 +23,7 @@
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
                 {% if user.is_authenticated %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'transaction_list' %}">Transactions</a></li>
                     <li class="nav-item"><span class="nav-link disabled">Hi, {{ user.username }}</span></li>
                     <li class="nav-item">
                         <form method="POST" action="{% url 'logout' %}" class="d-inline">

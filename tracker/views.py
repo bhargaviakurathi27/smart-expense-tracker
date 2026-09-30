@@ -118,3 +118,29 @@ def dashboard(request):
         'category_totals': category_totals,
     }
     return render(request, 'tracker/dashboard.html', context)
+from .forms import BudgetForm
+
+@login_required
+def budget_list(request):
+    budgets = Budget.objects.filter(user=request.user).order_by('-year', '-month')
+    return render(request, 'tracker/budget.html', {'budgets': budgets})
+
+
+@login_required
+def budget_add(request):
+    if request.method == 'POST':
+        form = BudgetForm(request.POST)
+        if form.is_valid():
+            # update_or_create: if a budget already exists for this user/month/year,
+            # update its amount instead of raising a duplicate error
+            Budget.objects.update_or_create(
+                user=request.user,
+                month=form.cleaned_data['month'],
+                year=form.cleaned_data['year'],
+                defaults={'amount': form.cleaned_data['amount']},
+            )
+            messages.success(request, 'Budget saved!')
+            return redirect('budget_list')
+    else:
+        form = BudgetForm()
+    return render(request, 'tracker/budget_form.html', {'form': form})

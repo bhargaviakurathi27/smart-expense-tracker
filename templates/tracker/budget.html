@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Budgets | Smart Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>My Budgets</h2>
+        <a href="{% url 'budget_add' %}" class="btn btn-primary">+ Set Budget</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <table class="table table-striped bg-white">
+        <thead>
+            <tr><th>Month</th><th>Year</th><th class="text-end">Budget Amount</th></tr>
+        </thead>
+        <tbody>
+            {% for b in budgets %}
+            <tr>
+                <td>{{ b.get_month_display }}</td>
+                <td>{{ b.year }}</td>
+                <td class="text-end">₹{{ b.amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted">No budgets set yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

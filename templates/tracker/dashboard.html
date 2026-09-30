@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Smart Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Dashboard</h2>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Income</h6>
+                    <h4 class="text-success">₹{{ total_income }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Expenses</h6>
+                    <h4 class="text-danger">₹{{ total_expenses }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">Current Balance</h6>
+                    <h4 class="text-primary">₹{{ balance }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">This Month's Income</h6>
+                    <h5>₹{{ month_income }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">This Month's Expenses</h6>
+                    <h5>₹{{ month_expenses }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">Remaining Budget</h6>
+                    {% if budget_amount == 0 %}
+                        <p class="text-muted mb-0">No budget set for this month</p>
+                    {% else %}
+                        <h5 class="{% if remaining_budget < 0 %}text-danger{% else %}text-success{% endif %}">
+                            ₹{{ remaining_budget }}
+                        </h5>
+                        {% if remaining_budget < 0 %}
+                            <small class="text-danger">Over budget!</small>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent transactions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Recent Transactions</div>
+                <ul class="list-group list-group-flush">
+                    {% for t in recent_transactions %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ t.category.name }} <small class="text-muted">({{ t.date }})</small></span>
+                        <span class="{% if t.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                            {% if t.transaction_type == 'income' %}+{% else %}-{% endif %}₹{{ t.amount }}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No transactions yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Expenses by category chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Expenses by Category (This Month)</div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    // json_script safely converts the Python list into JSON Chart.js can read
+    const categoryLabels = {{ category_labels|safe }};
+    const categoryTotals = {{ category_totals|safe }};
+
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'pie',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryTotals,
+                backgroundColor: ['#0d6efd', '#dc3545', '#198754', '#ffc107', '#6f42c1', '#fd7e14', '#20c997', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
+{% endblock %}

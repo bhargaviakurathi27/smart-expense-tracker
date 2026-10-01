@@ -7,6 +7,7 @@ from .forms import TransactionForm
 from django.db.models import Sum
 from django.utils import timezone
 from .models import Budget
+from .models import Transaction, Category, Budget
 def home(request):
     # Finds templates/tracker/home.html and returns it as a web page
     return render(request, 'tracker/home.html')
@@ -27,10 +28,50 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 @login_required
 def transaction_list(request):
-    # Only this user's transactions — never all transactions
     transactions = Transaction.objects.filter(user=request.user)
-    return render(request, 'tracker/transactions.html', {'transactions': transactions})
 
+    # Each filter only applies if the user actually submitted that field
+    category_id = request.GET.get('category')
+    if category_id:
+        transactions = transactions.filter(category_id=category_id)
+
+    transaction_type = request.GET.get('type')
+    if transaction_type:
+        transactions = transactions.filter(transaction_type=transaction_type)
+
+    date_from = request.GET.get('date_from')
+    if date_from:
+        transactions = transactions.filter(date__gte=date_from)
+
+    date_to = request.GET.get('date_to')
+    if date_to:
+        transactions = transactions.filter(date__lte=date_to)
+
+    min_amount = request.GET.get('min_amount')
+    if min_amount:
+        transactions = transactions.filter(amount__gte=min_amount)
+
+    max_amount = request.GET.get('max_amount')
+    if max_amount:
+        transactions = transactions.filter(amount__lte=max_amount)
+
+    search = request.GET.get('search')
+    if search:
+        transactions = transactions.filter(description__icontains=search)
+
+    context = {
+        'transactions': transactions,
+        'categories': Category.objects.all(),
+        # Pass back what was submitted so the form stays filled in after filtering
+        'selected_category': category_id,
+        'selected_type': transaction_type,
+        'date_from': date_from or '',
+        'date_to': date_to or '',
+        'min_amount': min_amount or '',
+        'max_amount': max_amount or '',
+        'search': search or '',
+    }
+    return render(request, 'tracker/transactions.html', context)
 
 @login_required
 def transaction_add(request):

@@ -47,5 +47,43 @@
             {% endfor %}
         </tbody>
     </table>
+    <form method="GET" class="card card-body mb-3">
+    <div class="row g-2">
+        <div class="col-md-2">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="type" class="form-select">
+                <option value="">All Types</option>
+                <option value="income" {% if selected_type == "income" %}selected{% endif %}>Income</option>
+                <option value="expense" {% if selected_type == "expense" %}selected{% endif %}>Expense</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_from" value="{{ date_from }}" class="form-control" placeholder="From">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_to" value="{{ date_to }}" class="form-control" placeholder="To">
+        </div>
+        <div class="col-md-1">
+            <input type="number" name="min_amount" value="{{ min_amount }}" class="form-control" placeholder="Min ₹">
+        </div>
+        <div class="col-md-1">
+            <input type="number" name="max_amount" value="{{ max_amount }}" class="form-control" placeholder="Max ₹">
+        </div>
+        <div class="col-md-2">
+            <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search description">
+        </div>
+    </div>
+    <div class="mt-2">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="{% url 'transaction_list' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+    </div>
+</form>
 </div>
 {% endblock %}

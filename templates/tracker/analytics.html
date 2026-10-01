@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Analytics | Smart Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Analytics</h2>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Income</h6>
+                    <h5 class="text-success">₹{{ total_income }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Expenses</h6>
+                    <h5 class="text-danger">₹{{ total_expenses }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Savings</h6>
+                    <h5 class="text-primary">₹{{ total_savings }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="text-muted">Avg Monthly Spending</h6>
+                    <h5>₹{{ average_monthly_spending }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if highest_category %}
+    <p class="text-muted mb-4">
+        Highest spending category: <strong>{{ highest_category.category__name }}</strong>
+        (₹{{ highest_category.total }})
+    </p>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Expenses by Category</div>
+                <div class="card-body"><canvas id="categoryChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Monthly Income vs Expenses</div>
+                <div class="card-body"><canvas id="monthlyChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">Spending Trend</div>
+                <div class="card-body"><canvas id="trendChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const categoryLabels = {{ category_labels|safe }};
+    const categoryTotals = {{ category_totals|safe }};
+    const monthLabels = {{ month_labels|safe }};
+    const incomeSeries = {{ income_series|safe }};
+    const expenseSeries = {{ expense_series|safe }};
+
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'pie',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryTotals,
+                backgroundColor: ['#0d6efd', '#dc3545', '#198754', '#ffc107', '#6f42c1', '#fd7e14', '#20c997', '#6c757d']
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+            labels: monthLabels,
+            datasets: [
+                { label: 'Income', data: incomeSeries, backgroundColor: '#198754' },
+                { label: 'Expenses', data: expenseSeries, backgroundColor: '#dc3545' }
+            ]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: monthLabels,
+            datasets: [{
+                label: 'Expenses',
+                data: expenseSeries,
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220,53,69,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+</script>
+{% endblock %}

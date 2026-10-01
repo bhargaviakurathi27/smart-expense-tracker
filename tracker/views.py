@@ -144,3 +144,71 @@ def budget_add(request):
     else:
         form = BudgetForm()
     return render(request, 'tracker/budget_form.html', {'form': form})
+from django.db.models.functions import TruncMonth
+
+@login_required
+def analytics(request):
+    user = request.user
+    transactions = Transaction.objects.filter(user=user)
+
+    total_income = transactions.filter(transaction_type='income').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_expenses = transactions.filter(transaction_type='expense').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_savings = total_income - total_expenses
+
+    # Category breakdown (all-time, for the analytics page)
+    category_data = (
+        transactions.filter(transaction_type='expense')
+        .values('category__name')
+        .annotate(total=Sum('amount'))
+        .order_by('-total')
+    )
+    category_labels = [item['category__name'] for item in category_data]
+    category_totals = [float(item['total']) for item in category_data]
+
+    highest_category = category_data.first()  # already sorted by -total, so first = highest
+
+    # Monthly totals: TruncMonth groups each transaction's date down to its month,
+    # so all transactions in September collapse into one "September" group
+    monthly_income = (
+        transactions.filter(transaction_type='income')
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    )
+    monthly_expenses = (
+        transactions.filter(transaction_type='expense')
+        .annotate(month=TruncMonth('date'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    )
+
+    # Build a sorted list of every month that appears in either income or expenses
+    all_months = sorted(set(
+        [item['month'] for item in monthly_income] + [item['month'] for item in monthly_expenses]
+    ))
+    month_labels = [m.strftime('%b %Y') for m in all_months]  # e.g. "Sep 2026"
+
+    income_by_month = {item['month']: float(item['total']) for item in monthly_income}
+    expenses_by_month = {item['month']: float(item['total']) for item in monthly_expenses}
+    income_series = [income_by_month.get(m, 0) for m in all_months]
+    expense_series = [expenses_by_month.get(m, 0) for m in all_months]
+
+    # Average monthly spending: total expenses divided by number of distinct months with data
+    num_months = len(all_months) or 1  # avoid dividing by zero for a brand-new account
+    average_monthly_spending = round(float(total_expenses) / num_months, 2)
+
+    context = {
+        'total_income': total_income,
+        'total_expenses': total_expenses,
+        'total_savings': total_savings,
+        'highest_category': highest_category,
+        'average_monthly_spending': average_monthly_spending,
+        'category_labels': category_labels,
+        'category_totals': category_totals,
+        'month_labels': month_labels,
+        'income_series': income_series,
+        'expense_series': expense_series,
+    }
+    return render(request, 'tracker/analytics.html', context)
